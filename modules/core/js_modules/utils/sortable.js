@@ -1,6 +1,10 @@
 function handleMessagesDragAndDrop() {
     const tableBody = document.querySelector('.message_table_body');
+    // console.log('handling drag and drop for table body', tableBody);
+    
     if(tableBody && !hm_mobile()) {
+        console.log('table body', tableBody);
+        
         const allFoldersClassNames = [];
         let targetFolder;
         let movingElement;
@@ -80,6 +84,9 @@ function handleMessagesDragAndDrop() {
         // Keep track of all folders class names
         allFoldersClassNames.push(...[...emailFoldersElements].map(folder => folder.className.split(' ')[0]));
 
+        console.log('emailFoldersGroups', emailFoldersGroups);
+        
+
         emailFoldersGroups.forEach((emailFolders) => {
             Sortable.create(emailFolders, {
                 sort: false,
@@ -103,39 +110,58 @@ function handleMessagesDragAndDrop() {
     }
 }
 
+function getMovingElements(tableBody) {
+    let movingElements = [];
+    // Is the target element checked
+    const isChecked = tableBody.querySelector('.checkbox_cell input[type=checkbox]:checked');
+    if (isChecked) {
+        movingElements = document.querySelectorAll('.message_table_body > tr > .checkbox_cell input[type=checkbox]:checked');
+        // Add a highlight class to the tr
+        movingElements.forEach((checkbox) => {
+            checkbox.parentElement.parentElement.classList.add('table-secondary');
+        });
+    } else {
+        // If not, uncheck all other checked elements so that they don't get moved
+        document.querySelectorAll('.message_table_body > tr > .checkbox_cell input[type=checkbox]:checked').forEach((checkbox) => {
+            checkbox.checked = false;
+        });
+    }
+    return movingElements;
+}
+
 function alterDragImage(tableBody) {
-    Sortable.utils.on(tableBody, 'dragstart', (evt) => {
-        let movingElements = [];
-        // Is the target element checked
-        const isChecked = evt.target.querySelector('.checkbox_cell input[type=checkbox]:checked');
-        if (isChecked) {
-            movingElements = document.querySelectorAll('.message_table_body > tr > .checkbox_cell input[type=checkbox]:checked');
-            // Add a highlight class to the tr
-            movingElements.forEach((checkbox) => {
-                checkbox.parentElement.parentElement.classList.add('table-secondary');
-            });
-        } else {
-            // If not, uncheck all other checked elements so that they don't get moved
-            document.querySelectorAll('.message_table_body > tr > .checkbox_cell input[type=checkbox]:checked').forEach((checkbox) => {
-                checkbox.checked = false;
-            });
-        }
+    movingNumber = getMovingElements(tableBody).length || 1;
 
-        movingNumber = movingElements.length || 1;
+    const element = document.createElement('div');
+    element.textContent = `Move ${movingNumber} conversation${movingNumber > 1 ? 's' : ''}`;
+    element.style.position = 'absolute';
+    element.className = 'dragged_element';
+    document.body.appendChild(element);
 
-        const element = document.createElement('div');
-        element.textContent = `Move ${movingNumber} conversation${movingNumber > 1 ? 's' : ''}`;
-        element.style.position = 'absolute';
-        element.className = 'dragged_element';
-        document.body.appendChild(element);
+    document.addEventListener('drag', () => {
+        element.style.display = 'none'
+    });
+    document.addEventListener('mouseover', () => {
+        element.remove();
+    });
 
-        document.addEventListener('drag', () => {
+    Sortable.utils.on(tableBody, 'dragstart', (event) => {
+        event.dataTransfer.setDragImage(element, 0, 0);
+    });
+
+    Sortable.utils.on(tableBody, 'touchstart', (event) => {
+        const touch = event.touches[0];
+        element.style.left = `${touch.clientX}px`;
+        element.style.top = `${touch.clientY}px`;
+        document.addEventListener('touchmove', (event) => {
+            const touch = event.touches[0];
+            element.style.left = `${touch.clientX}px`;
+            element.style.top = `${touch.clientY}px`;
+        });
+        document.addEventListener('touchend', () => {
             element.style.display = 'none'
+            document.removeEventListener('touchmove', () => {});
+            document.removeEventListener('touchend', () => {});
         });
-        document.addEventListener('mouseover', () => {
-            element.remove();
-        });
-
-        evt.dataTransfer.setDragImage(element, 0, 0);
     });
 }

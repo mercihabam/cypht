@@ -1406,4 +1406,6 @@ return [
     'enable_mstnef_viewer' => env('ENABLE_MSTNEF_VIEWER', false),
     
     'site_module_path' => env('SITE_MODULE_PATH', ''),
+
+    'dispatch_response_mode' => env('DISPATCH_RESPONSE_MODE', 'render'),
 ];
